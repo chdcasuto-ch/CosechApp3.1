@@ -1377,6 +1377,12 @@ function tabTransporte(t) {
   document.querySelectorAll('#s-transporte .tab-btn').forEach((b,i) => b.classList.toggle('on',(i===0&&t==='r')||(i===1&&t==='h')||(i===2&&t==='p')));
   document.querySelectorAll('#s-transporte .atab').forEach((a,i) => a.classList.toggle('on',(i===0&&t==='r')||(i===1&&t==='h')||(i===2&&t==='p')));
   if (t === 'h') rHistorialTransporte();
+  if (t === 'p') {
+    cargarDatos().then(function() {
+      var preview = document.getElementById('pf-preview');
+      if (preview) preview.style.display = 'none';
+    });
+  }
 }
 
 async function cargarTransporte() {
