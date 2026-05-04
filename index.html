@@ -396,7 +396,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="row3">
         <div class="fg"><label>Tara (kg)</label><input id="p-tara" readonly style="background:#f5f5f5;color:#666;cursor:not-allowed;"></div>
         <div class="fg"><label>% Deshoje <span class="badge-auto">automático</span></label><input id="p-deshoje" readonly placeholder="—"></div>
-        <div class="fg"><label>Kg neto <span class="badge-auto">automático</span></label><input id="p-neto" readonly placeholder="—"></div>
+        <div class="fg"><label>Kg Guia <span class="badge-auto">automático</span></label><input id="p-neto" readonly placeholder="—"></div>
       </div>
       <div class="fg"><label>Kg diferencia <span class="badge-auto">automático</span></label><input id="p-dif" readonly placeholder="—"></div>
       <div class="fg">
@@ -422,7 +422,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <table class="kt" style="min-width:600px;">
           <thead><tr>
             <th>#</th><th>BIN</th><th>Kg sucio</th><th>Kg limpio</th>
-            <th>Tara</th><th>% Deshoje</th><th>Kg neto</th><th>Foto</th>
+            <th>Tara</th><th>% Deshoje</th><th>Kg Guia</th><th>Foto</th>
           </tr></thead>
           <tbody id="historial-pesaje-body">
             <tr><td colspan="7" style="text-align:center;color:#aaa;padding:1.5rem;">Sin pesajes registrados hoy</td></tr>
@@ -476,13 +476,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="card">
         <div class="row2">
           <div class="fg"><label>Fecha proceso</label><input type="date" id="m-fecha"></div>
-          <div class="fg"><label>Kg netos</label><input type="number" id="m-kg" min="0" step="0.1" placeholder="Ej: 5000" oninput="calcRend()"></div>
+          <div class="fg"><label>Kg Netos</label><input type="number" id="m-kg" min="0" step="0.1" placeholder="Ej: 5000" oninput="calcRend()"></div>
+        </div>
+        <div class="fg">
+          <label>Variedades procesadas</label>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="m-var-arb" value="Arbequina" style="width:16px;height:16px;"> Arbequina
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="m-var-fra" value="Frantoio" style="width:16px;height:16px;"> Frantoio
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="m-var-kor" value="Koroneiki" style="width:16px;height:16px;"> Koroneiki
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="m-var-pic" value="Picual" style="width:16px;height:16px;"> Picual
+            </label>
+          </div>
         </div>
         <div class="row2">
           <div class="fg"><label>Kg aceite</label><input type="number" id="m-kg-aceite" min="0" step="0.1" placeholder="Ej: 850" oninput="calcRend()"></div>
           <div class="fg"><label>Litros aceite</label><input type="number" id="m-lts" min="0" step="0.1" placeholder="Ej: 850"></div>
         </div>
-        <div class="fg"><label>Rendimiento industrial <span class="badge-auto">automático</span></label><input id="m-rend" readonly placeholder="Kg aceite / Kg netos × 100"></div>
+        <div class="fg"><label>Rendimiento industrial <span class="badge-auto">automático</span></label><input id="m-rend" readonly placeholder="Kg aceite / Kg Netos × 100"></div>
         <button class="btn btn-morado" id="btn-maquila" onclick="guardarMaquila()">Guardar registro de proceso</button>
         <div class="msg msg-ok" id="msg-maquila-ok">✓ Registro guardado en Google Sheets</div>
         <div class="msg msg-err" id="msg-maquila-err"></div>
@@ -505,6 +522,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="tab-bar">
       <button class="tab-btn on" onclick="tabTransporte('r')">Registro</button>
       <button class="tab-btn" onclick="tabTransporte('h')">Historial</button>
+      <button class="tab-btn" onclick="tabTransporte('p')">📄 Proforma</button>
     </div>
 
     <!-- Registro Transporte -->
@@ -524,13 +542,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         </div>
         <div class="fg"><label>Hora salida</label><input type="time" id="t-hora"></div>
         <div class="fg">
-          <label>Foto del despacho <span style="font-size:11px;color:#888;">(opcional)</span></label>
-          <div class="foto-area" onclick="document.getElementById('t-foto-inp').click()">
-            <input type="file" id="t-foto-inp" accept="image/*" onchange="previsualizarFoto(this)">
-            <div id="foto-placeholder">📷 Toca para seleccionar foto</div>
-            <img id="t-foto-preview" class="foto-preview-img" alt="Vista previa">
-          </div>
+          <label>Fotos del despacho <span style="font-size:11px;color:#888;">(opcional, máx. 5)</span></label>
+          <label class="foto-area" for="t-fotos-inp" style="display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">
+            <input type="file" id="t-fotos-inp" accept="image/*" multiple onchange="previsualizarFotos(this)" style="display:none;">
+            📷 Seleccionar fotos
+          </label>
+          <div id="t-fotos-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
           <div class="foto-estado" id="t-foto-estado"></div>
+        </div>
+        <div class="fg">
+          <label>Documentos <span style="font-size:11px;color:#888;">(opcional, PDF/Word/Excel)</span></label>
+          <label class="foto-area" for="t-docs-inp" style="display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">
+            <input type="file" id="t-docs-inp" accept=".pdf,.doc,.docx,.xls,.xlsx" multiple onchange="previsualizarDocs(this)" style="display:none;">
+            📄 Seleccionar documentos
+          </label>
+          <div id="t-docs-preview" style="margin-top:8px;"></div>
+          <div class="foto-estado" id="t-docs-estado"></div>
         </div>
         <button class="btn btn-coral" id="btn-transporte" onclick="guardarTransporte()">Guardar registro de transporte</button>
         <div class="msg msg-ok" id="msg-transporte-ok">✓ Registro guardado en Google Sheets</div>
@@ -546,7 +573,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 </div>
 <script>
-const URL_GS = 'https://script.google.com/macros/s/AKfycbyH4ZNW32Gz6mzS2VxldziWsIMoZUOqhrHLykyU1ARKcUigOQlshsF0XZQfwt7cqwyu/exec';
+const URL_GS = 'https://script.google.com/macros/s/AKfycbz3il1OtdFHq6tDn6Wa6M2FQJBHIIE8-6HY2IuFnKqmPUVP11ViMAaHZ58zCukXD2d_/exec';
 const CQ = {
   'Quebrachal': ['La borrega','La Oveja','La Esquila','El Fardo','El Bebedero','El portón','Falda 1','Falda 2'],
   'Lomas': ['Cuartel 1','Cuartel 2','Cuartel 3'],
@@ -1090,7 +1117,7 @@ function rDiario() {
 
   const porH = grpBy(campos, 'huerto');
   const maxKgH = Math.max(...Object.values(porH).map(cs => kgLimpio(cs.map(c => String(c.bin)))));
-  h += '<div class="ks"><div class="ks-title azul">🌿 Kg por huerto</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Huerto</th><th>Bins</th><th>Árboles</th><th>Superficie Productiva (hás)</th><th>Kg limpio</th><th style="min-width:100px">Progreso</th></tr></thead><tbody>';
+  h += '<div class="ks"><div class="ks-title azul">🌿 Kg por huerto</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Huerto</th><th>Bins</th><th>Árboles</th><th>Superficie Productiva (hás)</th><th>Kg Guia</th><th style="min-width:100px">Progreso</th></tr></thead><tbody>';
   Object.entries(porH).forEach(([hu, cs], i) => {
     const k = kgLimpio(cs.map(c => String(c.bin)));
     const a = cs.reduce((x, c) => x + Number(c.arboles), 0);
@@ -1102,14 +1129,14 @@ function rDiario() {
 
   const porV = grpBy(campos, 'variedad');
   const maxKgV = Math.max(...Object.values(porV).map(cs => kgLimpio(cs.map(c => String(c.bin)))));
-  h += '<div class="ks"><div class="ks-title ambar">🫒 Kg por variedad</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Variedad</th><th>Bins</th><th>Kg limpio</th><th style="min-width:100px">Progreso</th></tr></thead><tbody>';
+  h += '<div class="ks"><div class="ks-title ambar">🫒 Kg por variedad</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Variedad</th><th>Bins</th><th>Kg Guia</th><th style="min-width:100px">Progreso</th></tr></thead><tbody>';
   Object.entries(porV).forEach(([v, cs], i) => {
     const k = kgLimpio(cs.map(c => String(c.bin)));
     h += '<tr><td><span class="pill ' + PILLS[i % PILLS.length] + '">' + v + '</span></td><td class="num">' + cs.length + '</td><td class="num">' + k.toLocaleString('es-CL') + ' kg</td><td>' + barRow(k, maxKgV, BARS[i % BARS.length]) + '</td></tr>';
   });
   h += '</tbody></table></div></div>';
 
-  h += '<div class="ks"><div class="ks-title coral">📦 Detalle de bins del día</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>BIN</th><th>Huerto</th><th>Cuartel</th><th>Variedad</th><th>Árboles</th><th>Kg limpio</th></tr></thead><tbody>';
+  h += '<div class="ks"><div class="ks-title coral">📦 Detalle de bins del día</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>BIN</th><th>Huerto</th><th>Cuartel</th><th>Variedad</th><th>Árboles</th><th>Kg Guia</th></tr></thead><tbody>';
   campos.forEach(c => {
     const p = DB.pesaje.find(p => String(p.bin) === String(c.bin));
     const kg = p ? Number(p.limpio).toLocaleString('es-CL') + ' kg' : '<span class="muted">Sin pesaje</span>';
@@ -1196,7 +1223,7 @@ function rHistorico() {
 
   const porH = grpBy(DB.campo, 'huerto');
   const maxH = Math.max(...Object.values(porH).map(cs => kgLimpio(cs.map(c => String(c.bin)))));
-  h += '<div class="ks"><div class="ks-title azul">🌿 Acumulado por huerto</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Huerto</th><th>Bins</th><th>Árboles</th><th>Superficie Productiva (hás)</th><th>Kg neto</th><th>Kg/árbol</th><th>Kg/Ha</th><th style="min-width:90px">%</th></tr></thead><tbody>';
+  h += '<div class="ks"><div class="ks-title azul">🌿 Acumulado por huerto</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Huerto</th><th>Bins</th><th>Árboles</th><th>Superficie Productiva (hás)</th><th>Kg Guia</th><th>Kg/árbol</th><th>Kg/Ha</th><th style="min-width:90px">%</th></tr></thead><tbody>';
   Object.entries(porH).forEach(([hu, cs], i) => {
     const k = kgLimpio(cs.map(c => String(c.bin)));
     const a = cs.reduce((x, c) => x + Number(c.arboles), 0);
@@ -1213,7 +1240,7 @@ function rHistorico() {
 
   const porV = grpBy(DB.campo, 'variedad');
   const maxV = Math.max(...Object.values(porV).map(cs => kgLimpio(cs.map(c => String(c.bin)))));
-  h += '<div class="ks"><div class="ks-title ambar">🫒 Acumulado por variedad</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Variedad</th><th>Bins</th><th>Árboles</th><th>Kg neto</th><th>Kg/árbol</th><th>Kg/Ha</th><th style="min-width:90px">%</th></tr></thead><tbody>';
+  h += '<div class="ks"><div class="ks-title ambar">🫒 Acumulado por variedad</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Variedad</th><th>Bins</th><th>Árboles</th><th>Kg Guia</th><th>Kg/árbol</th><th>Kg/Ha</th><th style="min-width:90px">%</th></tr></thead><tbody>';
   Object.entries(porV).forEach(([v, cs], i) => {
     const k = kgLimpio(cs.map(c => String(c.bin)));
     const a = cs.reduce((x, c) => x + Number(c.arboles), 0);
@@ -1311,7 +1338,7 @@ async function guardarMaquila() {
     if (res.ok) {
       showMsg('maquila','ok','✓ Registro guardado en Google Sheets');
       document.getElementById('m-fecha').value = '';
-      document.getElementById('m-kg').value = '';
+      document.getElementById('m-kg').value = ''; limpiarVarsMaquila();
       document.getElementById('m-kg-aceite').value = '';
       document.getElementById('m-lts').value = '';
       document.getElementById('m-rend').value = '';
@@ -1331,13 +1358,13 @@ function rResumenMaquila() {
   const rendProm = DB.maquila.reduce((a,r) => a + Number(r.rendimiento), 0) / DB.maquila.length;
 
   let h = '<div class="ks"><div class="ks-title morado">🫒 Resumen maquila acumulado</div><div class="kg">';
-  h += kc('Kg netos totales', kgTot.toLocaleString('es-CL'), 'kg', 'verde');
+  h += kc('Kg Guias totales', kgTot.toLocaleString('es-CL'), 'kg', 'verde');
   h += kc('Kg aceite total', kgAceiteTot.toLocaleString('es-CL'), 'kg', 'morado');
   h += kc('Litros aceite total', ltTot.toLocaleString('es-CL'), 'lt', 'azul');
   h += kc('Prom. rendimiento', rendProm.toFixed(2), '%', 'ambar');
   h += '</div></div>';
 
-  h += '<div class="ks"><div class="ks-title morado">📅 Registro por fecha de proceso</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Fecha proceso</th><th>Kg netos</th><th>Kg aceite</th><th>Litros aceite</th><th>Rend. industrial</th></tr></thead><tbody>';
+  h += '<div class="ks"><div class="ks-title morado">📅 Registro por fecha de proceso</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Fecha proceso</th><th>Kg Guias</th><th>Kg aceite</th><th>Litros aceite</th><th>Rend. industrial</th></tr></thead><tbody>';
   [...DB.maquila].sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).forEach(r => {
     h += '<tr><td class="num">' + r.fecha + '</td><td class="num">' + Number(r.kgNetos).toLocaleString('es-CL') + ' kg</td><td class="num">' + Number(r.kgAceite||0).toLocaleString('es-CL') + ' kg</td><td class="num">' + Number(r.litrosAceite||0).toLocaleString('es-CL') + ' lt</td><td class="num">' + Number(r.rendimiento).toFixed(2) + ' %</td></tr>';
   });
@@ -1347,8 +1374,8 @@ function rResumenMaquila() {
 
 /* ============ TRANSPORTE ============ */
 function tabTransporte(t) {
-  document.querySelectorAll('#s-transporte .tab-btn').forEach((b,i) => b.classList.toggle('on',(i===0&&t==='r')||(i===1&&t==='h')));
-  document.querySelectorAll('#s-transporte .atab').forEach((a,i) => a.classList.toggle('on',(i===0&&t==='r')||(i===1&&t==='h')));
+  document.querySelectorAll('#s-transporte .tab-btn').forEach((b,i) => b.classList.toggle('on',(i===0&&t==='r')||(i===1&&t==='h')||(i===2&&t==='p')));
+  document.querySelectorAll('#s-transporte .atab').forEach((a,i) => a.classList.toggle('on',(i===0&&t==='r')||(i===1&&t==='h')||(i===2&&t==='p')));
   if (t === 'h') rHistorialTransporte();
 }
 
@@ -1368,7 +1395,8 @@ async function guardarTransporte() {
   btn.disabled = true; btn.textContent = 'Guardando...';
   try {
     // Subir foto a Drive si existe
-    const fotoUrl = await subirFotoDrive(v('t-guia-d'), v('t-fecha'));
+    const fotoUrl = await subirFotosTransporte(v('t-guia-d'), v('t-fecha'));
+    const docUrl = await subirDocsTransporte(v('t-guia-d'), v('t-fecha'));
     const res = await post({
       action: 'guardarTransporte',
       fecha: v('t-fecha'), lote: v('t-lote'),
@@ -1376,12 +1404,13 @@ async function guardarTransporte() {
       guiaTransportista: v('t-guia-t'),
       patente: v('t-patente').toUpperCase(),
       horaSalida: v('t-hora'),
-      fotoUrl: fotoUrl
+      fotoUrl: fotoUrl,
+      docUrl: docUrl
     });
     if (res.ok) {
       showMsg('transporte','ok','✓ Registro guardado en Google Sheets');
       ['t-lote','t-guia-d','t-kg','t-guia-t','t-patente','t-hora'].forEach(i => document.getElementById(i).value = '');
-      limpiarFoto();
+      limpiarFotosTransporte();
       await cargarTransporte();
     } else { showMsg('transporte','err','⚠ Error: ' + res.msg); }
   } catch(e) { showMsg('transporte','err','⚠ Sin conexión con Google Sheets'); }
@@ -1497,7 +1526,7 @@ function descargarPDF() {
   doc.text(sinTildes('Huerto'), 16, y);
   doc.text(sinTildes('Bins'), 90, y);
   doc.text(sinTildes('Arboles'), 120, y);
-  doc.text(sinTildes('Kg neto'), 160, y);
+  doc.text(sinTildes('Kg Guia'), 160, y);
   y += 6;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...negro);
@@ -1531,7 +1560,7 @@ function descargarPDF() {
   doc.setTextColor(...gris);
   doc.text(sinTildes('Variedad'), 16, y);
   doc.text(sinTildes('Bins'), 90, y);
-  doc.text(sinTildes('Kg neto'), 140, y);
+  doc.text(sinTildes('Kg Guia'), 140, y);
   y += 6;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...negro);
@@ -1564,7 +1593,7 @@ function descargarPDF() {
   doc.text(sinTildes('Huerto'), 45, y);
   doc.text(sinTildes('Variedad'), 95, y);
   doc.text(sinTildes('Arboles'), 135, y);
-  doc.text(sinTildes('Kg neto'), 165, y);
+  doc.text(sinTildes('Kg Guia'), 165, y);
   y += 6;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...negro);
@@ -1663,7 +1692,7 @@ function descargarPDFHistorico() {
   doc.setFillColor(235,245,255); doc.rect(14,y-5,182,8,'F');
   doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...gris);
   doc.text(sinTildes('Huerto'),14,y); doc.text(sinTildes('Bins'),65,y); doc.text(sinTildes('Arboles'),88,y);
-  doc.text(sinTildes('Sup. prod.'),112,y); doc.text(sinTildes('Kg neto'),145,y); doc.text(sinTildes('Kg/Ha'),175,y); y+=6;
+  doc.text(sinTildes('Sup. prod.'),112,y); doc.text(sinTildes('Kg Guia'),145,y); doc.text(sinTildes('Kg/Ha'),175,y); y+=6;
   doc.setFont('helvetica','normal'); doc.setTextColor(...negro);
   const porH = grpBy(DB.campo,'huerto');
   Object.entries(porH).forEach(([hu,cs]) => {
@@ -1684,7 +1713,7 @@ function descargarPDFHistorico() {
   doc.text(sinTildes('Acumulado por variedad'),14,y); doc.setDrawColor(...ambar); doc.line(14,y+2,120,y+2); y+=8;
   doc.setFillColor(254,246,228); doc.rect(14,y-5,182,8,'F');
   doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...gris);
-  doc.text(sinTildes('Variedad'),16,y); doc.text(sinTildes('Bins'),80,y); doc.text(sinTildes('Arboles'),110,y); doc.text(sinTildes('Kg neto'),155,y); y+=6;
+  doc.text(sinTildes('Variedad'),16,y); doc.text(sinTildes('Bins'),80,y); doc.text(sinTildes('Arboles'),110,y); doc.text(sinTildes('Kg Guia'),155,y); y+=6;
   doc.setFont('helvetica','normal'); doc.setTextColor(...negro);
   const porV = grpBy(DB.campo,'variedad');
   Object.entries(porV).forEach(([v,cs]) => {
@@ -2092,8 +2121,241 @@ function generarBin() {
   document.getElementById('c-bin').value = prefijo + '-' + numero;
 }
 
+/* ===== MAQUILA: leer variedades ===== */
+function getVarsMaquila() {
+  var vars = [];
+  ['arb','fra','kor','pic'].forEach(function(v) {
+    var el = document.getElementById('m-var-' + v);
+    if (el && el.checked) vars.push(el.value);
+  });
+  return vars.join(', ');
+}
+function limpiarVarsMaquila() {
+  ['arb','fra','kor','pic'].forEach(function(v) {
+    var el = document.getElementById('m-var-' + v);
+    if (el) el.checked = false;
+  });
+}
+
+/* ===== TRANSPORTE: múltiples fotos ===== */
+var fotosTransporte = [];
+var docsTransporte = [];
+
+function previsualizarFotos(input) {
+  if (!input.files) return;
+  var archivos = Array.from(input.files).slice(0, 5);
+  archivos.forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      fotosTransporte.push({ file: file, dataUrl: e.target.result });
+      renderFotosPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderFotosPreview() {
+  var prev = document.getElementById('t-fotos-preview');
+  if (!prev) return;
+  prev.innerHTML = '';
+  fotosTransporte.forEach(function(f, i) {
+    var div = document.createElement('div');
+    div.style = 'position:relative;width:70px;height:70px;';
+    div.innerHTML = '<img src="' + f.dataUrl + '" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #dde8d0;">' +
+      '<button onclick="eliminarFotoT(' + i + ')" style="position:absolute;top:-4px;right:-4px;background:#c0392b;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:1;">×</button>';
+    prev.appendChild(div);
+  });
+  var est = document.getElementById('t-foto-estado');
+  if (est) est.textContent = fotosTransporte.length + ' foto(s) seleccionada(s)';
+}
+
+function eliminarFotoT(i) {
+  fotosTransporte.splice(i, 1);
+  renderFotosPreview();
+}
+
+function previsualizarDocs(input) {
+  if (!input.files) return;
+  docsTransporte = Array.from(input.files);
+  var prev = document.getElementById('t-docs-preview');
+  if (!prev) return;
+  prev.innerHTML = docsTransporte.map(function(f) {
+    return '<div style="font-size:12px;color:#3a5a2e;padding:4px 0;">📄 ' + f.name + '</div>';
+  }).join('');
+  var est = document.getElementById('t-docs-estado');
+  if (est) est.textContent = docsTransporte.length + ' documento(s) seleccionado(s)';
+}
+
+async function subirFotosTransporte(guia, fecha) {
+  if (!fotosTransporte.length) return '';
+  var urls = [];
+  var est = document.getElementById('t-foto-estado');
+  for (var i = 0; i < fotosTransporte.length; i++) {
+    var f = fotosTransporte[i];
+    if (est) est.textContent = 'Subiendo foto ' + (i+1) + ' de ' + fotosTransporte.length + '...';
+    var base64 = f.dataUrl.split(',')[1];
+    var ext = f.file.name.split('.').pop() || 'jpg';
+    try {
+      var res = await post({
+        action: 'subirFoto',
+        nombre: 'Despacho_' + guia + '_' + fecha + '_' + (i+1) + '.' + ext,
+        mimeType: f.file.type || 'image/jpeg',
+        base64: base64,
+        carpeta: 'Transporte_Fotos'
+      });
+      if (res.ok && res.url) urls.push(res.url);
+    } catch(e) {}
+  }
+  if (est) est.textContent = urls.length + ' foto(s) guardada(s) en Drive';
+  return urls.join('|');
+}
+
+async function subirDocsTransporte(guia, fecha) {
+  if (!docsTransporte.length) return '';
+  var urls = [];
+  var est = document.getElementById('t-docs-estado');
+  for (var i = 0; i < docsTransporte.length; i++) {
+    var f = docsTransporte[i];
+    if (est) est.textContent = 'Subiendo documento ' + (i+1) + '...';
+    var reader = new FileReader();
+    var dataUrl = await new Promise(function(res) {
+      reader.onload = function(e) { res(e.target.result); };
+      reader.readAsDataURL(f);
+    });
+    var base64 = dataUrl.split(',')[1];
+    try {
+      var r = await post({
+        action: 'subirFoto',
+        nombre: 'Doc_' + guia + '_' + fecha + '_' + f.name,
+        mimeType: f.type || 'application/octet-stream',
+        base64: base64,
+        carpeta: 'Transporte_Documentos'
+      });
+      if (r.ok && r.url) urls.push(r.url);
+    } catch(e) {}
+  }
+  if (est) est.textContent = urls.length + ' documento(s) guardado(s)';
+  return urls.join('|');
+}
+
+function limpiarFotosTransporte() {
+  fotosTransporte = []; docsTransporte = [];
+  var p1 = document.getElementById('t-fotos-preview');
+  var p2 = document.getElementById('t-docs-preview');
+  var i1 = document.getElementById('t-fotos-inp');
+  var i2 = document.getElementById('t-docs-inp');
+  if (p1) p1.innerHTML = '';
+  if (p2) p2.innerHTML = '';
+  if (i1) i1.value = '';
+  if (i2) i2.value = '';
+  var e1 = document.getElementById('t-foto-estado');
+  var e2 = document.getElementById('t-docs-estado');
+  if (e1) e1.textContent = '';
+  if (e2) e2.textContent = '';
+}
+
+/* ===== PROFORMA EXCEL ===== */
+function generarProforma() {
+  var folio = document.getElementById('pf-folio').value || '001';
+  var fecha = document.getElementById('pf-fecha').value || new Date().toISOString().slice(0,10);
+  var razon = document.getElementById('pf-razon').value || '';
+  var rutTrans = document.getElementById('pf-rut-trans').value || '';
+  var nomTrans = document.getElementById('pf-nombre-trans').value || '';
+  var patente = document.getElementById('pf-patente').value || '';
+  var hora = document.getElementById('pf-hora').value || '';
+
+  // Calcular kg por cuartel y variedad desde DB.campo + DB.pesaje
+  // Kg Guia = limpio - tara (campo neto en pesaje)
+  var datos = {};
+  DB.campo.forEach(function(r) {
+    var key = r.cuartel + '||' + r.variedad;
+    // Buscar pesaje del bin (comparación robusta)
+    var binNorm = String(r.bin).toUpperCase().trim();
+    var pesaje = DB.pesaje.find(function(p) {
+      return String(p.bin).toUpperCase().trim() === binNorm;
+    });
+    // Kg Guia = neto si existe, sino limpio - tara
+    var kg = 0;
+    if (pesaje) {
+      var neto = Number(pesaje.neto);
+      var limpio = Number(pesaje.limpio);
+      var tara = Number(pesaje.tara) || 46;
+      kg = neto > 0 ? neto : (limpio > 0 ? limpio - tara : 0);
+    }
+    if (!datos[key]) datos[key] = { cuartel: r.cuartel, variedad: r.variedad, kg: 0, bins: 0 };
+    datos[key].kg += kg;
+    datos[key].bins += 1;
+  });
+
+  var filas = Object.values(datos).sort(function(a,b) {
+    return a.cuartel.localeCompare(b.cuartel) || a.variedad.localeCompare(b.variedad);
+  });
+  var totalKg = filas.reduce(function(a, d) { return a + d.kg; }, 0);
+
+  // Mostrar preview en pantalla antes de descargar
+  var preview = document.getElementById('pf-preview');
+  if (preview) {
+    var preHTML = '<table class="kt" style="margin-top:12px"><thead><tr><th>Cuartel</th><th>Variedad</th><th>Bins</th><th>Kg Guia</th></tr></thead><tbody>';
+    filas.forEach(function(f) {
+      preHTML += '<tr><td>' + f.cuartel + '</td><td>' + f.variedad + '</td><td>' + f.bins + '</td><td>' + Math.round(f.kg).toLocaleString('es-CL') + ' kg</td></tr>';
+    });
+    preHTML += '<tr style="font-weight:700"><td colspan="3">TOTAL</td><td>' + Math.round(totalKg).toLocaleString('es-CL') + ' kg</td></tr>';
+    preHTML += '</tbody></table>';
+    preview.innerHTML = preHTML;
+    preview.style.display = 'block';
+  }
+
+  if (totalKg === 0) {
+    alert('No hay datos de pesaje registrados para generar la proforma.');
+    return;
+  }
+
+  // Crear Excel con SheetJS
+  if (typeof XLSX === 'undefined') {
+    alert('Cargando librería Excel, intenta en un momento...');
+    return;
+  }
+
+  var wb = XLSX.utils.book_new();
+  var ws_data = [
+    ['COSECHA 2026 - OLIVOS DE CASUTO'],
+    ['SOLICITUD GUÍA DE DESPACHO', '', '', '', '', '', 'FOLIO N°', folio],
+    ['FECHA', fecha],
+    [],
+    ['DATOS ALMAZARA', '', '', '', '', '', 'DETALLE GENERAL'],
+    ['RAZON SOCIAL', razon, '', '', '', '', 'CERTIFICADO NOP', 'CERTIFIED ORGANIC BY ECOCERT'],
+    ['CONDICIONES', 'CONTADO', '', '', '', '', 'TIPO TRASLADO', 'NO CONSTITUYE VENTA'],
+    ['', '', '', '', '', '', 'RUT TRANSPORTISTA', rutTrans],
+    ['', '', '', '', '', '', 'NOMBRE TRANSPORTISTA', nomTrans],
+    ['', '', '', '', '', '', 'PATENTE CAMION', patente],
+    ['', '', '', '', '', '', 'LUGAR SALIDA', 'RUTA 5 NORTE KM 231, LOS VILOS'],
+    ['', '', '', '', '', '', 'LUGAR DESTINO', 'LA APATITA S/N PARCELA 4 COQUIMBO'],
+    ['', '', '', '', '', '', 'HORA SALIDA', hora],
+    [],
+    ['TOTAL KILOS', totalKg],
+    [],
+    ['CODIGO', 'CANTIDAD', 'DETALLE', 'DETALLE', 'PRECIO UNITARIO', 'DESCUENTO', 'TOTAL NETO'],
+  ];
+
+  filas.forEach(function(d) {
+    ws_data.push([46183, Math.round(d.kg), d.variedad, d.cuartel, '', '', '']);
+  });
+
+  ws_data.push([]);
+  ws_data.push(['', '', '', '', '', 'TOTAL', totalKg]);
+
+  var ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+  // Ancho de columnas
+  ws['!cols'] = [{wch:20},{wch:15},{wch:20},{wch:20},{wch:15},{wch:12},{wch:12}];
+
+  XLSX.utils.book_append_sheet(wb, ws, '2026');
+  XLSX.writeFile(wb, 'Proforma_Guia_' + folio + '_' + fecha + '.xlsx');
+}
+
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </body>
 </html>
