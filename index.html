@@ -522,7 +522,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="tab-bar">
       <button class="tab-btn on" onclick="tabTransporte('r')">Registro</button>
       <button class="tab-btn" onclick="tabTransporte('h')">Historial</button>
-      <button class="tab-btn" onclick="tabTransporte('p')">📄 Proforma</button>
     </div>
 
     <!-- Registro Transporte -->
@@ -566,9 +565,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
 
     <!-- Historial Transporte -->
-    <div id="tt-h" class="atab">
-      <div id="transporte-historial"></div>
-    </div>
+    
   </div>
 
 </div>
@@ -1334,7 +1331,8 @@ async function guardarMaquila() {
   const btn = document.getElementById('btn-maquila');
   btn.disabled = true; btn.textContent = 'Guardando...';
   try {
-    const res = await post({ action: 'guardarMaquila', fecha, kgNetos: kg, kgAceite, litrosAceite: isNaN(lts) ? 0 : lts, rendimiento: rend.toFixed(2) });
+    const varsMaquila = getVarsMaquila();
+    const res = await post({ action: 'guardarMaquila', fecha, variedades: varsMaquila, kgNetos: kg, kgAceite, litrosAceite: isNaN(lts) ? 0 : lts, rendimiento: rend.toFixed(2) });
     if (res.ok) {
       showMsg('maquila','ok','✓ Registro guardado en Google Sheets');
       document.getElementById('m-fecha').value = '';
@@ -1364,9 +1362,10 @@ function rResumenMaquila() {
   h += kc('Prom. rendimiento', rendProm.toFixed(2), '%', 'ambar');
   h += '</div></div>';
 
-  h += '<div class="ks"><div class="ks-title morado">📅 Registro por fecha de proceso</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Fecha proceso</th><th>Kg Guias</th><th>Kg aceite</th><th>Litros aceite</th><th>Rend. industrial</th></tr></thead><tbody>';
+  h += '<div class="ks"><div class="ks-title morado">📅 Registro por fecha de proceso</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Fecha proceso</th><th>Variedades</th><th>Kg Netos</th><th>Kg aceite</th><th>Litros aceite</th><th>Rend. industrial</th></tr></thead><tbody>';
   [...DB.maquila].sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).forEach(r => {
-    h += '<tr><td class="num">' + r.fecha + '</td><td class="num">' + Number(r.kgNetos).toLocaleString('es-CL') + ' kg</td><td class="num">' + Number(r.kgAceite||0).toLocaleString('es-CL') + ' kg</td><td class="num">' + Number(r.litrosAceite||0).toLocaleString('es-CL') + ' lt</td><td class="num">' + Number(r.rendimiento).toFixed(2) + ' %</td></tr>';
+        var varsAbrev = (r.variedades || '').replace(/Arbequina/gi,'ARB').replace(/Frantoio/gi,'FRAN').replace(/Koroneiki/gi,'KKI').replace(/Picual/gi,'PIC') || '—';
+    h += '<tr><td class="num">' + r.fecha + '</td><td>' + varsAbrev + '</td><td class="num">' + Number(r.kgNetos).toLocaleString('es-CL') + ' kg</td><td class="num">' + Number(r.kgAceite||0).toLocaleString('es-CL') + ' kg</td><td class="num">' + Number(r.litrosAceite||0).toLocaleString('es-CL') + ' lt</td><td class="num">' + Number(r.rendimiento).toFixed(2) + ' %</td></tr>';
   });
   h += '</tbody></table></div></div>';
   el.innerHTML = h;
@@ -1374,15 +1373,10 @@ function rResumenMaquila() {
 
 /* ============ TRANSPORTE ============ */
 function tabTransporte(t) {
-  document.querySelectorAll('#s-transporte .tab-btn').forEach((b,i) => b.classList.toggle('on',(i===0&&t==='r')||(i===1&&t==='h')||(i===2&&t==='p')));
-  document.querySelectorAll('#s-transporte .atab').forEach((a,i) => a.classList.toggle('on',(i===0&&t==='r')||(i===1&&t==='h')||(i===2&&t==='p')));
+  document.querySelectorAll('#s-transporte .tab-btn').forEach((b,i) => b.classList.toggle('on',(i===0&&t==='r')||(i===1&&t==='h')));
+  document.querySelectorAll('#s-transporte .atab').forEach((a,i) => a.classList.toggle('on',(i===0&&t==='r')||(i===1&&t==='h')));
   if (t === 'h') rHistorialTransporte();
-  if (t === 'p') {
-    cargarDatos().then(function() {
-      var preview = document.getElementById('pf-preview');
-      if (preview) preview.style.display = 'none';
-    });
-  }
+
 }
 
 async function cargarTransporte() {
@@ -2261,107 +2255,9 @@ function limpiarFotosTransporte() {
 }
 
 /* ===== PROFORMA EXCEL ===== */
-function generarProforma() {
-  var folio = document.getElementById('pf-folio').value || '001';
-  var fecha = document.getElementById('pf-fecha').value || new Date().toISOString().slice(0,10);
-  var razon = document.getElementById('pf-razon').value || '';
-  var rutTrans = document.getElementById('pf-rut-trans').value || '';
-  var nomTrans = document.getElementById('pf-nombre-trans').value || '';
-  var patente = document.getElementById('pf-patente').value || '';
-  var hora = document.getElementById('pf-hora').value || '';
-
-  // Calcular kg por cuartel y variedad desde DB.campo + DB.pesaje
-  // Kg Guia = limpio - tara (campo neto en pesaje)
-  var datos = {};
-  DB.campo.forEach(function(r) {
-    var key = r.cuartel + '||' + r.variedad;
-    // Buscar pesaje del bin (comparación robusta)
-    var binNorm = String(r.bin).toUpperCase().trim();
-    var pesaje = DB.pesaje.find(function(p) {
-      return String(p.bin).toUpperCase().trim() === binNorm;
-    });
-    // Kg Guia = neto si existe, sino limpio - tara
-    var kg = 0;
-    if (pesaje) {
-      var neto = Number(pesaje.neto);
-      var limpio = Number(pesaje.limpio);
-      var tara = Number(pesaje.tara) || 46;
-      kg = neto > 0 ? neto : (limpio > 0 ? limpio - tara : 0);
-    }
-    if (!datos[key]) datos[key] = { cuartel: r.cuartel, variedad: r.variedad, kg: 0, bins: 0 };
-    datos[key].kg += kg;
-    datos[key].bins += 1;
-  });
-
-  var filas = Object.values(datos).sort(function(a,b) {
-    return a.cuartel.localeCompare(b.cuartel) || a.variedad.localeCompare(b.variedad);
-  });
-  var totalKg = filas.reduce(function(a, d) { return a + d.kg; }, 0);
-
-  // Mostrar preview en pantalla antes de descargar
-  var preview = document.getElementById('pf-preview');
-  if (preview) {
-    var preHTML = '<table class="kt" style="margin-top:12px"><thead><tr><th>Cuartel</th><th>Variedad</th><th>Bins</th><th>Kg Guia</th></tr></thead><tbody>';
-    filas.forEach(function(f) {
-      preHTML += '<tr><td>' + f.cuartel + '</td><td>' + f.variedad + '</td><td>' + f.bins + '</td><td>' + Math.round(f.kg).toLocaleString('es-CL') + ' kg</td></tr>';
-    });
-    preHTML += '<tr style="font-weight:700"><td colspan="3">TOTAL</td><td>' + Math.round(totalKg).toLocaleString('es-CL') + ' kg</td></tr>';
-    preHTML += '</tbody></table>';
-    preview.innerHTML = preHTML;
-    preview.style.display = 'block';
-  }
-
-  if (totalKg === 0) {
-    alert('No hay datos de pesaje registrados para generar la proforma.');
-    return;
-  }
-
-  // Crear Excel con SheetJS
-  if (typeof XLSX === 'undefined') {
-    alert('Cargando librería Excel, intenta en un momento...');
-    return;
-  }
-
-  var wb = XLSX.utils.book_new();
-  var ws_data = [
-    ['COSECHA 2026 - OLIVOS DE CASUTO'],
-    ['SOLICITUD GUÍA DE DESPACHO', '', '', '', '', '', 'FOLIO N°', folio],
-    ['FECHA', fecha],
-    [],
-    ['DATOS ALMAZARA', '', '', '', '', '', 'DETALLE GENERAL'],
-    ['RAZON SOCIAL', razon, '', '', '', '', 'CERTIFICADO NOP', 'CERTIFIED ORGANIC BY ECOCERT'],
-    ['CONDICIONES', 'CONTADO', '', '', '', '', 'TIPO TRASLADO', 'NO CONSTITUYE VENTA'],
-    ['', '', '', '', '', '', 'RUT TRANSPORTISTA', rutTrans],
-    ['', '', '', '', '', '', 'NOMBRE TRANSPORTISTA', nomTrans],
-    ['', '', '', '', '', '', 'PATENTE CAMION', patente],
-    ['', '', '', '', '', '', 'LUGAR SALIDA', 'RUTA 5 NORTE KM 231, LOS VILOS'],
-    ['', '', '', '', '', '', 'LUGAR DESTINO', 'LA APATITA S/N PARCELA 4 COQUIMBO'],
-    ['', '', '', '', '', '', 'HORA SALIDA', hora],
-    [],
-    ['TOTAL KILOS', totalKg],
-    [],
-    ['CODIGO', 'CANTIDAD', 'DETALLE', 'DETALLE', 'PRECIO UNITARIO', 'DESCUENTO', 'TOTAL NETO'],
-  ];
-
-  filas.forEach(function(d) {
-    ws_data.push([46183, Math.round(d.kg), d.variedad, d.cuartel, '', '', '']);
-  });
-
-  ws_data.push([]);
-  ws_data.push(['', '', '', '', '', 'TOTAL', totalKg]);
-
-  var ws = XLSX.utils.aoa_to_sheet(ws_data);
-
-  // Ancho de columnas
-  ws['!cols'] = [{wch:20},{wch:15},{wch:20},{wch:20},{wch:15},{wch:12},{wch:12}];
-
-  XLSX.utils.book_append_sheet(wb, ws, '2026');
-  XLSX.writeFile(wb, 'Proforma_Guia_' + folio + '_' + fecha + '.xlsx');
-}
 
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </body>
 </html>
