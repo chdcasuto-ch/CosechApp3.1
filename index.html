@@ -290,7 +290,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="config-form" id="form-tara">
         <div class="fg">
           <label>Nueva tara (kg)</label>
-          <input type="number" id="cfg-tara-inp" min="0" step="0.1" placeholder="46">
+          <input type="number" id="cfg-tara-inp" min="0" step="0.1" placeholder="43">
         </div>
         <button class="btn-cfg" onclick="guardarTaraCfg()">Guardar tara</button>
         <div class="msg msg-ok" id="msg-tara-ok" style="display:none">✓ Tara actualizada</div>
@@ -565,7 +565,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
 
     <!-- Historial Transporte -->
-    
+    <div id="tt-h" class="atab">
+      <div id="transporte-historial"><div class="empty">Cargando...</div></div>
+    </div>
   </div>
 
 </div>
@@ -1058,7 +1060,7 @@ function tab(t) {
 }
 
 function grpBy(arr, k) { return arr.reduce((a, i) => { (a[i[k]] = a[i[k]] || []).push(i); return a; }, {}); }
-function kgLimpio(bins) { return DB.pesaje.filter(p => bins.includes(String(p.bin))).reduce((a, p) => a + (Number(p.neto) || Number(p.limpio) - (Number(p.tara) || 46)), 0); }
+function kgLimpio(bins) { return DB.pesaje.filter(p => bins.includes(String(p.bin))).reduce((a, p) => a + (Number(p.neto) || Number(p.limpio) - (Number(p.tara) || 43)), 0); }
 
 const COLORES = ['verde','azul','ambar','coral','morado'];
 const PILLS   = ['pill-verde','pill-azul','pill-ambar','pill-coral','pill-morado'];
@@ -1088,7 +1090,7 @@ function rDiario() {
   const sup = campos.reduce((a, c) => a + Number(c.superficie), 0);
   const kpA = arb ? (kg / arb).toFixed(1) : '—';
 
-  const kgGlobal = DB.pesaje.reduce((a, p) => a + (Number(p.neto) || Number(p.limpio) - (Number(p.tara) || 46)), 0);
+  const kgGlobal = DB.pesaje.reduce((a, p) => a + (Number(p.neto) || Number(p.limpio) - (Number(p.tara) || 43)), 0);
   const META_D = 219000;
   const pctG = Math.min(100, (kgGlobal / META_D * 100));
   const colorG = pctG >= 100 ? '#1D9E75' : pctG >= 60 ? '#BA7517' : '#c0392b';
@@ -1136,7 +1138,8 @@ function rDiario() {
   h += '<div class="ks"><div class="ks-title coral">📦 Detalle de bins del día</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>BIN</th><th>Huerto</th><th>Cuartel</th><th>Variedad</th><th>Árboles</th><th>Kg Guia</th></tr></thead><tbody>';
   campos.forEach(c => {
     const p = DB.pesaje.find(p => String(p.bin) === String(c.bin));
-    const kg = p ? Number(p.limpio).toLocaleString('es-CL') + ' kg' : '<span class="muted">Sin pesaje</span>';
+    const kgGuiaBin = p ? (Number(p.neto) || (Number(p.limpio) - (Number(p.tara) || getTara()))) : 0;
+    const kg = p ? kgGuiaBin.toLocaleString('es-CL') + ' kg' : '<span class="muted">Sin pesaje</span>';
     h += '<tr><td class="num">' + c.bin + '</td><td>' + c.huerto + '</td><td class="muted">' + c.cuartel + '</td><td>' + c.variedad + '</td><td class="num">' + Number(c.arboles).toLocaleString('es-CL') + '</td><td class="num">' + kg + '</td></tr>';
   });
   h += '</tbody></table></div></div>';
@@ -1147,7 +1150,7 @@ function rHistorico() {
   const el = document.getElementById('h-content');
   if (!el) return;
   if (!DB.campo.length) { el.innerHTML = '<div class="empty">Sin registros aún. Comienza registrando datos de campo.</div>'; return; }
-  const kgT = DB.pesaje.reduce((a, p) => a + (Number(p.neto) || Number(p.limpio) - (Number(p.tara) || 46)), 0);
+  const kgT = DB.pesaje.reduce((a, p) => a + (Number(p.neto) || Number(p.limpio) - (Number(p.tara) || 43)), 0);
   const arbT = DB.campo.reduce((a, c) => a + Number(c.arboles), 0);
   // Superficie dinámica: árboles cosechados / plantas por há
   const supT = DB.campo.reduce((a, r) => {
@@ -1183,7 +1186,15 @@ function rHistorico() {
   h += '</div></div>';
 
   // Barra de meta hectáreas
-  const META_HAS = 47.6;
+  // Leer Has total desde localStorage (configuracion guardada)
+  var _hasCfg = null;
+  try { var _hs = localStorage.getItem('has_cfg'); _hasCfg = _hs ? JSON.parse(_hs) : null; } catch(e) {}
+  var META_HAS = 47.6;
+  if (_hasCfg) {
+    var _tot = 0;
+    Object.values(_hasCfg).forEach(function(h){ Object.values(h).forEach(function(v){ _tot += v; }); });
+    if (_tot > 0) META_HAS = parseFloat(_tot.toFixed(2));
+  }
   const hasCosTotal = supT; // Usa cálculo dinámico
   const pctHas = Math.min(100, (hasCosTotal / META_HAS * 100));
   const colorHas = pctHas >= 100 ? '#1D9E75' : pctHas >= 60 ? '#BA7517' : pctHas >= 30 ? '#c0870a' : '#c0392b';
@@ -1237,7 +1248,7 @@ function rHistorico() {
 
   const porV = grpBy(DB.campo, 'variedad');
   const maxV = Math.max(...Object.values(porV).map(cs => kgLimpio(cs.map(c => String(c.bin)))));
-  h += '<div class="ks"><div class="ks-title ambar">🫒 Acumulado por variedad</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Variedad</th><th>Bins</th><th>Árboles</th><th>Kg Guia</th><th>Kg/árbol</th><th>Kg/Ha</th><th style="min-width:90px">%</th></tr></thead><tbody>';
+  h += '<div class="ks"><div class="ks-title ambar">🫒 Acumulado por variedad</div><div class="card" style="padding:0;overflow:hidden"><table class="kt"><thead><tr><th>Variedad</th><th>Bins</th><th>Árboles</th><th>Kg Guia</th><th>Kg/árbol</th><th style="min-width:90px">%</th></tr></thead><tbody>';
   Object.entries(porV).forEach(([v, cs], i) => {
     const k = kgLimpio(cs.map(c => String(c.bin)));
     const a = cs.reduce((x, c) => x + Number(c.arboles), 0);
@@ -1500,7 +1511,7 @@ function descargarPDF() {
   y = 88;
 
   // Barra de avance de temporada
-  const kgGlobalPDF = DB.pesaje.reduce((a,p) => a+(Number(p.neto)||(Number(p.limpio)-(Number(p.tara)||46))),0);
+  const kgGlobalPDF = DB.pesaje.reduce((a,p) => a+(Number(p.neto)||(Number(p.limpio)-(Number(p.tara)||43))),0);
   const META_PDF = 219000;
   const pctMetaPDF = Math.min(100, kgGlobalPDF/META_PDF*100);
   doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(...negro);
@@ -1632,7 +1643,7 @@ function descargarPDFHistorico() {
   const doc = new jsPDF();
   const verde = [29,158,117]; const azul = [55,138,221]; const ambar = [186,117,23];
   const coral = [192,57,43]; const morado = [124,92,191]; const gris = [100,100,100]; const negro = [26,26,26];
-  const kgT = DB.pesaje.reduce((a,p) => a+(Number(p.neto)||(Number(p.limpio)-(Number(p.tara)||46))),0);
+  const kgT = DB.pesaje.reduce((a,p) => a+(Number(p.neto)||(Number(p.limpio)-(Number(p.tara)||43))),0);
   const arbT = DB.campo.reduce((a,c) => a+Number(c.arboles),0);
   const supT = DB.campo.reduce((a,r) => {
     const p = PLANTAS_HA[r.huerto]&&PLANTAS_HA[r.huerto][r.cuartel]?PLANTAS_HA[r.huerto][r.cuartel]:0;
@@ -1641,7 +1652,9 @@ function descargarPDFHistorico() {
   const dias = [...new Set(DB.campo.map(r=>r.fecha))].length;
   const kpA = arbT ? kgT/arbT : 0;
   const kpH = supT ? kgT/supT : 0;
-  const META = 219000; const META_HAS = 47.6;
+  const META = 219000;
+  var _hcfg=null; try{var _hs=localStorage.getItem('has_cfg');_hcfg=_hs?JSON.parse(_hs):null;}catch(e){}
+  var META_HAS=42.3; if(_hcfg){var _t=0;Object.values(_hcfg).forEach(function(h){Object.values(h).forEach(function(v){_t+=v;});});if(_t>0)META_HAS=parseFloat(_t.toFixed(2));}
   const pctMeta = Math.min(100,(kgT/META*100));
   const hasCosTotal = supT;
   const pctHas = Math.min(100,(hasCosTotal/META_HAS*100));
@@ -1793,9 +1806,9 @@ var VARS_C = {
     'La Esquila':['Arbequina','Frantoio','Koroneiki','Picual'],
     'El Fardo':['Arbequina','Frantoio','Koroneiki','Picual'],
     'El Bebedero':['Koroneiki'],
-    'El porton':['Arbequina','Koroneiki'],
+    'El porton':['Koroneiki'],
     'Falda 1':['Arbequina','Koroneiki'],
-    'Falda 2':['Arbequina','Koroneiki']
+    'Falda 2':['Koroneiki']
   },
   'Lomas': {
     'Cuartel 1':['Arbequina','Koroneiki','Picual'],
@@ -1806,14 +1819,52 @@ var VARS_C = {
   'Chigualoco': { 'Chigualoco':['Arbequina','Koroneiki'] }
 };
 
+// Inventario de árboles por defecto
+var INV_DEF = [
+  {huerto:'Quebrachal',cuartel:'La borrega',variedad:'Arbequina',total:250},
+  {huerto:'Quebrachal',cuartel:'La borrega',variedad:'Frantoio',total:393},
+  {huerto:'Quebrachal',cuartel:'La borrega',variedad:'Koroneiki',total:143},
+  {huerto:'Quebrachal',cuartel:'La borrega',variedad:'Picual',total:500},
+  {huerto:'Quebrachal',cuartel:'La Oveja',variedad:'Arbequina',total:214},
+  {huerto:'Quebrachal',cuartel:'La Oveja',variedad:'Frantoio',total:393},
+  {huerto:'Quebrachal',cuartel:'La Oveja',variedad:'Koroneiki',total:107},
+  {huerto:'Quebrachal',cuartel:'La Oveja',variedad:'Picual',total:286},
+  {huerto:'Quebrachal',cuartel:'La Esquila',variedad:'Arbequina',total:204},
+  {huerto:'Quebrachal',cuartel:'La Esquila',variedad:'Frantoio',total:411},
+  {huerto:'Quebrachal',cuartel:'La Esquila',variedad:'Koroneiki',total:103},
+  {huerto:'Quebrachal',cuartel:'La Esquila',variedad:'Picual',total:505},
+  {huerto:'Quebrachal',cuartel:'El Fardo',variedad:'Arbequina',total:306},
+  {huerto:'Quebrachal',cuartel:'El Fardo',variedad:'Frantoio',total:456},
+  {huerto:'Quebrachal',cuartel:'El Fardo',variedad:'Koroneiki',total:89},
+  {huerto:'Quebrachal',cuartel:'El Fardo',variedad:'Picual',total:449},
+  {huerto:'Quebrachal',cuartel:'El Bebedero',variedad:'Koroneiki',total:250},
+  {huerto:'Quebrachal',cuartel:'El porton',variedad:'Koroneiki',total:167},
+  {huerto:'Quebrachal',cuartel:'Falda 1',variedad:'Arbequina',total:167},
+  {huerto:'Quebrachal',cuartel:'Falda 1',variedad:'Koroneiki',total:250},
+  {huerto:'Quebrachal',cuartel:'Falda 2',variedad:'Koroneiki',total:208},
+  {huerto:'Lomas',cuartel:'Cuartel 1',variedad:'Arbequina',total:2852},
+  {huerto:'Lomas',cuartel:'Cuartel 1',variedad:'Koroneiki',total:889},
+  {huerto:'Lomas',cuartel:'Cuartel 1',variedad:'Picual',total:444},
+  {huerto:'Lomas',cuartel:'Cuartel 2',variedad:'Arbequina',total:2852},
+  {huerto:'Lomas',cuartel:'Cuartel 2',variedad:'Koroneiki',total:889},
+  {huerto:'Lomas',cuartel:'Cuartel 2',variedad:'Picual',total:444},
+  {huerto:'Lomas',cuartel:'Cuartel 3',variedad:'Arbequina',total:2852},
+  {huerto:'Lomas',cuartel:'Cuartel 3',variedad:'Koroneiki',total:889},
+  {huerto:'Lomas',cuartel:'Cuartel 3',variedad:'Picual',total:445},
+  {huerto:'Agua Amarilla',cuartel:'Ensayo',variedad:'Arbequina',total:278},
+  {huerto:'Agua Amarilla',cuartel:'Ensayo',variedad:'Koroneiki',total:278},
+  {huerto:'Chigualoco',cuartel:'Chigualoco',variedad:'Arbequina',total:458},
+  {huerto:'Chigualoco',cuartel:'Chigualoco',variedad:'Koroneiki',total:625}
+];
+
 var HAS_DEF = {
   'Quebrachal': {'La borrega':3.8,'La Oveja':2.8,'La Esquila':3.4,'El Fardo':3.6,'El porton':0.4,'El Bebedero':0.6,'Falda 1':1.0,'Falda 2':0.5},
   'Lomas': {'Cuartel 1':7.53,'Cuartel 2':7.53,'Cuartel 3':7.54},
   'Agua Amarilla': {'Ensayo':1.0},
-  'Chigualoco': {'Chigualoco':7.9}
+  'Chigualoco': {'Chigualoco':2.6}
 };
 
-var TARA_GLOBAL = parseFloat(localStorage.getItem('tara_g') || '46');
+var TARA_GLOBAL = parseFloat(localStorage.getItem('tara_g') || '43');
 
 function getTara() { return TARA_GLOBAL; }
 
@@ -1969,7 +2020,7 @@ async function guardarInvCfg() {
 
 // Inicializar tara al cargar
 (function() {
-  TARA_GLOBAL = parseFloat(localStorage.getItem('tara_g') || '46');
+  TARA_GLOBAL = parseFloat(localStorage.getItem('tara_g') || '43');
   var inp = document.getElementById('p-tara');
   if (inp) inp.value = TARA_GLOBAL + ' kg';
   // Inicializar has config
